@@ -1,12 +1,15 @@
-import MyRoomPage from '@/components/MyRoomPage'
-import React from 'react'
+import MyRoomPage from "@/components/MyRoomPage";
+import { ChatProvider } from "@/context/ChatContext";
+import React from "react";
 
 function page() {
   return (
     <div>
-      <MyRoomPage/>
+      <ChatProvider>
+        <MyRoomPage />
+      </ChatProvider>
     </div>
-  )
+  );
 }
 
-export default page
+export default page;

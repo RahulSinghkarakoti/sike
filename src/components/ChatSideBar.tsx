@@ -6,54 +6,40 @@ import {
   Avatar,
   Text,
   Input,
-  Toast,
   useToast,
   Skeleton,
   SkeletonCircle,
-  SkeletonText,
-  Button,
   Stack,
   IconButton,
 } from "@chakra-ui/react";
 
-import axios from "axios";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Prisma } from "@prisma/client";
 import { LuRefreshCcw } from "react-icons/lu";
+import { ChatContext } from "@/context/ChatContext";
 
 type ChatRoomWithRelations = Prisma.ChatRoomGetPayload<{
   include: { messages: true; members: true };
 }>;
 
 function ChatSideBar() {
-  const [chats, setChats] = useState<ChatRoomWithRelations[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const toast = useToast();
 
+  const { chatLoading, chats, getChats, setCurrentChat } =
+    useContext(ChatContext);
+
   const fetchChats = async () => {
     try {
-      setLoading(true);
-      const response = await axios.get("/api/my-rooms");
-
-      if (response.data.status != 200) {
-        setError("Unable to Fetch your chats");
-        toast({
-          title: "Error Occured",
-          description: response.data.message,
-          status: "error", // success | error | warning | info
-          duration: 2500,
-          isClosable: true,
-          position: "bottom-right", // optional: top | top-right | bottom | etc.
-        });
-      } else {
-        console.log(response.data.rooms);
-        setChats(response.data.rooms);
-      }
+      if (chatLoading) return;
+      await getChats();
     } catch (error: any) {
-      setError(error);
-    } finally {
-      setLoading(false);
+      if (error instanceof Error) {
+        console.log(error);
+        setError(error.message); // Set error message from thrown Error object
+      } else {
+        setError("Unknown error occurred");
+      }
     }
   };
 
@@ -61,15 +47,33 @@ function ChatSideBar() {
     fetchChats();
   }, []);
 
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "An error occurred",
+        description: error,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      }); 
+      setError("");
+    }
+  }, [error, toast]);
+
   return (
     <VStack spacing={4} align="stretch">
       <HStack>
-
-      <Input placeholder="Search chats..." size="sm" />
-      <IconButton icon={<LuRefreshCcw />} size="sm" aria-label="Refrsh" onClick={() => fetchChats()}>Refresh</IconButton>
-
+        <Input placeholder="Search chats..." size="sm" />
+        <IconButton
+          icon={<LuRefreshCcw />}
+          size="sm"
+          aria-label="Refrsh"
+          onClick={() => fetchChats()}
+        >
+          Refresh
+        </IconButton>
       </HStack>
-      {loading ? (
+      {chatLoading ? (
         <>
           {new Array(5).fill(0).map((_, index) => (
             <HStack key={index} gap="5">
@@ -97,6 +101,7 @@ function ChatSideBar() {
                     transform: "translateY(-2px)",
                     boxShadow: "md",
                   }}
+                  onClick={() => setCurrentChat(chat)}
                 >
                   <Avatar size="sm" />
                   <Text fontWeight="medium">{chat.name}</Text>

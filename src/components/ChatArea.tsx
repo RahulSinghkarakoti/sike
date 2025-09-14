@@ -12,14 +12,39 @@ import {
   Divider,
   Container,
   Button,
+  Center,
+  Icon,
 } from "@chakra-ui/react";
 import { AddIcon, AttachmentIcon, ArrowForwardIcon } from "@chakra-ui/icons";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import axios from "axios";
+import { ChatContext } from "@/context/ChatContext";
+import { IoChatboxEllipsesOutline } from "react-icons/io5";
+
 function ChatArea() {
-   
+  const { currentChat } = useContext(ChatContext);
+
+  if (!currentChat) {
+    return (
+      <Flex flex="1" direction="column" p={4} overflowY="auto" minH="90vh">
+        <Center h="100%">
+          <VStack>
+            <Icon
+              as={IoChatboxEllipsesOutline}
+              boxSize="100"
+              color="gray.500"
+            />
+            <Text fontSize="xl" color="gray.500">
+              Select a room to start chatting
+            </Text>
+          </VStack>
+        </Center>
+      </Flex>
+    );
+  }
+
   return (
-    <Flex flex="1" direction="column" justify=" " align="" h="100%">
+    <Flex flex="1" direction="column" justify=" " align="" minH="90vh">
       {/* Chat Header */}
       <HStack
         px={4}
@@ -31,8 +56,11 @@ function ChatArea() {
       >
         <HStack>
           <Avatar size="sm" />
-          <Text fontWeight="bold">Chat with John Doe</Text>
+          <Text fontWeight="bold">
+            {currentChat?.name || "Room Name HERE..."}
+          </Text>
         </HStack>
+
         <HStack spacing={2}>
           <IconButton icon={<AddIcon />} size="sm" aria-label="Add" />
           <IconButton icon={<AttachmentIcon />} size="sm" aria-label="Attach" />
