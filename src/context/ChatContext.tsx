@@ -1,7 +1,13 @@
 "use client";
 
 import { chatReducer } from "@/components/reducers/chat-reducer";
-import { Chat, ChatContextType, InitialStateType, Message } from "@/types/chat";
+import {
+  ApiResult,
+  Chat,
+  ChatContextType,
+  InitialStateType,
+  Message,
+} from "@/types/chat";
 import axios from "axios";
 import Error from "next/error";
 import { createContext, ReactNode, FC, useReducer } from "react";
@@ -29,6 +35,7 @@ const ChatContext = createContext<ChatContextType>({
   setCurrentChat: () => {},
   closeChat: () => {},
   getChats: () => {},
+  joinRoom: (roomSlug) => {},
 });
 
 const ChatProvider = ({ children }: ChatProviderProps) => {
@@ -53,7 +60,6 @@ const ChatProvider = ({ children }: ChatProviderProps) => {
   const getChats = async () => {
     console.log("-------getChats-------");
     try {
-
       dispatch({ type: "SET_CHAT_LOADING", payload: true });
       const response = await axios.get("/api/my-rooms");
 
@@ -61,13 +67,33 @@ const ChatProvider = ({ children }: ChatProviderProps) => {
       setChats(chats);
       dispatch({ type: "SET_CHAT_LOADING", payload: false });
     } catch (error) {
-  if (error instanceof Error) {
-    throw new Error('Error Occur While Fetching Chats: ' + error.message);
-  } else {
-    throw new Error('Error Occur While Fetching Chats');
-  }
-}
+      if (error instanceof Error) {
+        throw new Error("Error Occur While Fetching Chats: " + error.message);
+      } else {
+        throw new Error("Error Occur While Fetching Chats");
+      }
+    }
   };
+
+  async function joinRoom(roomSlug: string): Promise<ApiResult> {
+    try {
+      console.log("-------joinRoom-------");
+
+      const response = await axios.post("/api/join-room", { slug: roomSlug });
+      if (response.data.status === 201) {
+        console.log(response.data)
+        const newChat = response.data.chat;
+        setChats([...state.chats, newChat]);
+        dispatch({ type: "SET_CURRENT_CHAT", payload: newChat });
+        return { success: true, message: response.data.message, data: newChat };
+      }
+
+      return { success: false, message: response.data.message };
+    } catch (error) {
+      console.error(error);
+      return { success: false, message: "Error joining room" };
+    }
+  }
 
   return (
     <ChatContext.Provider
@@ -77,6 +103,7 @@ const ChatProvider = ({ children }: ChatProviderProps) => {
         chatLoading: state.chatLoading,
         chats: state.chats,
         currentChat: state.currentChat,
+        joinRoom,
         setMessages,
         setChats,
         setCurrentChat,

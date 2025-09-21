@@ -1,5 +1,8 @@
-import { chatReducer } from './../components/reducers/chat-reducer';
-
+export type ApiResult<T = unknown> = {
+  success: boolean;
+  message: string;
+  data?: T;
+};
 export interface Message {
     id: string;
     text: string;
@@ -11,10 +14,10 @@ export interface Chat {
     id: string;
     name: string;
     last_message_at: number;
-    lock:boolean,
-    created_at:string,
-    updated_at:string,
-    createdById:string,
+    lock: boolean,
+    created_at: string,
+    updated_at: string,
+    createdById: string,
     status: 'online' | 'offline';
 }
 
@@ -32,7 +35,7 @@ export type ChatAction =
     | { type: "SET_CHAT_LOADING"; payload: boolean }
     | { type: "SET_CHATS"; payload: Chat[] }
     | { type: "SET_MESSAGES"; payload: Message[] }
-    | { type: "UPDATE_SEEN"; payload:  {id:string}};
+    | { type: "UPDATE_SEEN"; payload: { id: string } };
 
 export interface ChatContextType {
     messages: Message[];
@@ -43,6 +46,8 @@ export interface ChatContextType {
     setMessages: (newMessages: Message[]) => void;
     setChats: (newChats: Chat[]) => void
     setCurrentChat: (chat: Chat) => void
-    closeChat:()=>void
-    getChats:()=>void
+    closeChat: () => void
+    getChats: () => void
+    joinRoom: (roomSlug:string) => void
 }
+

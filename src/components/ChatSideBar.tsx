@@ -17,6 +17,8 @@ import { useContext, useEffect, useState } from "react";
 import { Prisma } from "@prisma/client";
 import { LuRefreshCcw } from "react-icons/lu";
 import { ChatContext } from "@/context/ChatContext";
+import CreateRoomModal from "./CreateRoomModal";
+import JoinRoomModal from "./JoinRoomModal";
 
 type ChatRoomWithRelations = Prisma.ChatRoomGetPayload<{
   include: { messages: true; members: true };
@@ -50,12 +52,12 @@ function ChatSideBar() {
   useEffect(() => {
     if (error) {
       toast({
-        title: "An error occurred",
-        description: error,
+        title: "Error",
+        description:   error,
         status: "error",
         duration: 5000,
         isClosable: true,
-      }); 
+      });
       setError("");
     }
   }, [error, toast]);
@@ -88,6 +90,20 @@ function ChatSideBar() {
       ) : (
         <>
           <VStack align="stretch" spacing={3}>
+            <HStack
+              p={3}
+              borderRadius="md"
+              cursor="pointer"
+              transition="all .2s"
+              _hover={{
+                bg: "gray.100",
+                transform: "translateY(-2px)",
+                boxShadow: "md",
+              }}
+            >
+              <JoinRoomModal />
+            </HStack>
+
             {chats &&
               chats?.map((chat, index) => (
                 <HStack

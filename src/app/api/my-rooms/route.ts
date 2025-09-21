@@ -17,7 +17,6 @@ export async function GET(req: NextRequest,res:NextResponse) {
         //     messages:true
         // }
     })
-    console.log(chatRooms)
 
     return NextResponse.json({status:200,message:'room fethced',rooms:chatRooms})
 } 
