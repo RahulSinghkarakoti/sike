@@ -6,8 +6,9 @@ export type ApiResult<T = unknown> = {
 export interface Message {
     id: string;
     text: string;
-    timestamp: number;
-    status: 'sent' | 'delivered' | 'seen';
+    senderId:string;
+    roomId:number;
+    created_at: string;
 }
 
 export interface Chat {
@@ -15,6 +16,7 @@ export interface Chat {
     name: string;
     last_message_at: number;
     lock: boolean,
+    slug:string,
     created_at: string,
     updated_at: string,
     createdById: string,
@@ -26,6 +28,8 @@ export interface InitialStateType {
     loading: boolean;
     chatLoading: boolean;
     chats: Chat[];          // Adjust type if needed (e.g., Chat[])
+    messageLoading: boolean;
+    sendLoading:boolean;
     messages: Message[];
 }
 
@@ -35,6 +39,8 @@ export type ChatAction =
     | { type: "SET_CHAT_LOADING"; payload: boolean }
     | { type: "SET_CHATS"; payload: Chat[] }
     | { type: "SET_MESSAGES"; payload: Message[] }
+    | { type: "SET_MESSAGES_LOADING"; payload: boolean }
+    | { type: "SET_SEND_LOADING"; payload: boolean }
     | { type: "UPDATE_SEEN"; payload: { id: string } };
 
 export interface ChatContextType {
@@ -42,6 +48,8 @@ export interface ChatContextType {
     currentChat: Chat | null;
     loading: boolean;
     chatLoading: boolean;
+    messageLoading: boolean;
+    sendLoading:boolean;
     chats: Chat[];
     setMessages: (newMessages: Message[]) => void;
     setChats: (newChats: Chat[]) => void
@@ -49,5 +57,6 @@ export interface ChatContextType {
     closeChat: () => void
     getChats: () => void
     joinRoom: (roomSlug:string) => void
+    sendMessage: (text:string) => void
 }
 

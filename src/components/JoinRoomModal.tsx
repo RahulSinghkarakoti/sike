@@ -22,20 +22,18 @@ function JoinRoomModal() {
   const toast = useToast();
 
   const handleJoinRoom = async () => {
-    const result = await joinRoom(roomSlug);
-
-    console.log(result);
+    const res=await joinRoom(roomSlug)
+      console.log(res); 
       toast({
-        title: result.success ? "Success" : "Error",
-        description: result.message,
-        status: result.success ? "success" : "error",
+        title: res?.success ? "Success" : "Error",
+        description: res?.message || "",
+        status: res?.success ? "success" : "error",
         duration: 5000,
         isClosable: true,
-      });
-    onClose()
+      }); 
+    onClose();
   };
 
- 
   return (
     <>
       <Button variant="outline" w="100%" colorScheme="cyan" onClick={onOpen}>

@@ -9,8 +9,9 @@ import {
   Message,
 } from "@/types/chat";
 import axios from "axios";
-import Error from "next/error";
 import { createContext, ReactNode, FC, useReducer } from "react";
+import { socket } from "@/lib/socketClient";
+import Cookies from "js-cookie";  
 
 interface ChatProviderProps {
   children: ReactNode;
@@ -20,6 +21,8 @@ export const ChatIntialState: InitialStateType = {
   currentChat: null,
   loading: false,
   chatLoading: false,
+  messageLoading: false,
+  sendLoading:false,
   chats: [],
   messages: [],
 };
@@ -28,7 +31,9 @@ const ChatContext = createContext<ChatContextType>({
   messages: [],
   currentChat: null,
   loading: false,
+  messageLoading: false,
   chatLoading: false,
+  sendLoading:false,
   chats: [],
   setMessages: () => {},
   setChats: () => {},
@@ -36,6 +41,7 @@ const ChatContext = createContext<ChatContextType>({
   closeChat: () => {},
   getChats: () => {},
   joinRoom: (roomSlug) => {},
+  sendMessage: (text) => {},
 });
 
 const ChatProvider = ({ children }: ChatProviderProps) => {
@@ -51,6 +57,8 @@ const ChatProvider = ({ children }: ChatProviderProps) => {
 
   const setCurrentChat = (chat: Chat) => {
     dispatch({ type: "SET_CURRENT_CHAT", payload: chat });
+    joinWSRoom(chat.id);
+    getMessages(chat.id);
   };
 
   const closeChat = () => {
@@ -75,13 +83,33 @@ const ChatProvider = ({ children }: ChatProviderProps) => {
     }
   };
 
+  const getMessages = async (roomId: String) => {
+    console.log("-------getMessages-------");
+    try {
+      dispatch({ type: "SET_MESSAGES_LOADING", payload: true });
+
+      const response = await axios.post("/api/room-messages", {
+        room_id: roomId,
+      });
+      const messages = response.data.messages;
+      setMessages(messages);
+      dispatch({ type: "SET_MESSAGES_LOADING", payload: false });
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error("Error Occur While Fetching Chats: " + error.message);
+      } else {
+        throw new Error("Error Occur While Fetching Chats");
+      }
+    }
+  };
+
   async function joinRoom(roomSlug: string): Promise<ApiResult> {
     try {
       console.log("-------joinRoom-------");
 
       const response = await axios.post("/api/join-room", { slug: roomSlug });
       if (response.data.status === 201) {
-        console.log(response.data)
+        console.log(response.data);
         const newChat = response.data.chat;
         setChats([...state.chats, newChat]);
         dispatch({ type: "SET_CURRENT_CHAT", payload: newChat });
@@ -95,12 +123,41 @@ const ChatProvider = ({ children }: ChatProviderProps) => {
     }
   }
 
+  const joinWSRoom = async (roomId: string) => {
+    console.log("joinSocketRoom");
+    const user_id = Cookies.get("anon_id");
+    socket.emit("join-room", { roomId, userId: user_id, username: "rahul" });
+    console.log(socket);
+  };
+
+  const sendMessage = async (text: string) => {
+    console.log("-------sendMessage-------");
+    try {
+      const roomId = state?.currentChat?.id;
+      if (!roomId || !text.trim()) return;
+
+      dispatch({ type: "SET_SEND_LOADING", payload: true });
+      const response = await axios.post("/api/send-message", { roomId,text });
+      console.log(response);
+      setMessages([...state.messages,response.data.newMessage])
+      dispatch({ type: "SET_SEND_LOADING", payload: false });
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error("Error Occur While sending Message: " + error.message);
+      } else {
+        throw new Error("Error Occur While  sending Message");
+      }
+    }
+  };
+
   return (
     <ChatContext.Provider
       value={{
-        messages: state.messages,
+        messages: state.messages || [],
         loading: state.loading,
         chatLoading: state.chatLoading,
+        messageLoading: state.messageLoading,
+        sendLoading:state.sendLoading,
         chats: state.chats,
         currentChat: state.currentChat,
         joinRoom,
@@ -109,6 +166,7 @@ const ChatProvider = ({ children }: ChatProviderProps) => {
         setCurrentChat,
         closeChat,
         getChats,
+        sendMessage,
       }}
     >
       {children}

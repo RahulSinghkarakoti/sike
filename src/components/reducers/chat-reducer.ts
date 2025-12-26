@@ -1,8 +1,8 @@
 'use client'
 
-import { InitialStateType,ChatAction } from "@/types/chat"
+import { InitialStateType, ChatAction } from "@/types/chat"
 
- 
+
 
 
 export const chatReducer = (state: InitialStateType, action: ChatAction) => {
@@ -15,6 +15,10 @@ export const chatReducer = (state: InitialStateType, action: ChatAction) => {
             return { ...state, chatLoading: action.payload }
         case "SET_CHATS":
             return { ...state, chats: action.payload }
+        case "SET_MESSAGES_LOADING":
+            return { ...state, messageLoading: action.payload }
+        case "SET_SEND_LOADING":
+            return { ...state, sendLoading: action.payload }
         case "SET_MESSAGES":
             return { ...state, messages: action.payload }
         case "UPDATE_SEEN":

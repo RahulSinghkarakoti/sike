@@ -20,13 +20,34 @@ import { useContext, useState } from "react";
 import axios from "axios";
 import { ChatContext } from "@/context/ChatContext";
 import { IoChatboxEllipsesOutline } from "react-icons/io5";
+import MessageInput from "./MessageInput";
+import Cookies from "js-cookie";
+import { format, isToday, isYesterday } from "date-fns";
+import MessageSkeleton from "./MessageSkeleton";
+import { useEffect, useRef } from "react";
+import ChatHeader from "./ChatHeader";
 
 function ChatArea() {
-  const { currentChat } = useContext(ChatContext);
+  const { currentChat, messages, messageLoading, sendLoading, sendMessage } =
+    useContext(ChatContext);
+  const user_id = Cookies.get("anon_id");
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const formatTime = (iso: string) => {
+    const date = new Date(iso);
+
+    if (isToday(date)) return format(date, "hh:mm a");
+    if (isYesterday(date)) return "Yesterday " + format(date, "hh:mm a");
+    return format(date, "dd MMM, hh:mm a");
+  };
 
   if (!currentChat) {
     return (
-      <Flex flex="1" direction="column" p={4} overflowY="auto" minH="90vh">
+      <Flex flex="1" direction="column" p={4} overflowY="auto" maxH="85vh">
         <Center h="100%">
           <VStack>
             <Icon
@@ -44,84 +65,60 @@ function ChatArea() {
   }
 
   return (
-    <Flex flex="1" direction="column" justify=" " align="" minH="90vh">
+    <Flex
+      flex="1"
+      direction="column"
+      justify="space-between"
+      align=""
+      maxH="85vh"
+    >
       {/* Chat Header */}
-      <HStack
-        px={4}
-        py={3}
-        bg="white"
-        borderBottom="1px"
-        borderColor="gray.200"
-        justify="space-between"
-      >
-        <HStack>
-          <Avatar size="sm" />
-          <Text fontWeight="bold">
-            {currentChat?.name || "Room Name HERE..."}
-          </Text>
-        </HStack>
-
-        <HStack spacing={2}>
-          <IconButton icon={<AddIcon />} size="sm" aria-label="Add" />
-          <IconButton icon={<AttachmentIcon />} size="sm" aria-label="Attach" />
-        </HStack>
-      </HStack>
+   <ChatHeader currentChat={currentChat}/>
 
       {/* Message List */}
-      <Flex flex="1" direction="column" p={4} overflowY="auto">
-        <VStack spacing={4} align="stretch">
-          {/* Incoming message */}
-          <HStack align="start">
-            <Avatar size="sm" />
-            <Box bg="gray.200" p={3} borderRadius="lg" maxW="70%">
-              <Text>Hello! How are you?</Text>
-              <Text fontSize="xs" color="gray.500">
-                10:30 AM
-              </Text>
-            </Box>
-          </HStack>
-
-          {/* Outgoing message */}
-          <HStack align="end" justify="flex-end">
-            <Box bg="teal.500" color="white" p={3} borderRadius="lg" maxW="70%">
-              <Text>I'm good, thanks!</Text>
-              <Text fontSize="xs" color="gray.100" textAlign="right">
-                10:32 AM
-              </Text>
-            </Box>
-          </HStack>
-
-          {/* System message */}
-          <Divider />
-          <Text textAlign="center" fontSize="sm" color="gray.500">
-            John joined the chat
-          </Text>
-          <Divider />
+      <Box h="400px" overflowY="auto" p={3} bg="gray.50" borderRadius="md">
+        <VStack align="stretch" spacing={3}>
+          {messageLoading ? (
+            <MessageSkeleton />
+          ) : (
+            Array.isArray(messages) &&
+            messages?.map((message, index) => (
+              <div key={message.id || index}>
+                {user_id === message.senderId ? (
+                  <HStack align="end" justify="flex-end">
+                    <Box
+                      bg="teal.500"
+                      color="white"
+                      p={3}
+                      borderRadius="lg"
+                      maxW="70%"
+                    >
+                      <Text>{message.text}</Text>
+                      <Text fontSize="xs" color="gray.100" textAlign="right">
+                        {formatTime(message.created_at)}
+                      </Text>
+                    </Box>
+                  </HStack>
+                ) : (
+                  <HStack align="start">
+                    <Avatar size="sm" />
+                    <Box bg="gray.200" p={3} borderRadius="lg" maxW="70%">
+                      <Text>{message.text}</Text>
+                      <Text fontSize="xs" color="gray.500">
+                        {formatTime(message.created_at)}
+                      </Text>
+                    </Box>
+                  </HStack>
+                )}
+              </div>
+            ))
+          )}
+          <div ref={bottomRef} />
         </VStack>
-      </Flex>
-
-      {/* Typing Indicator */}
-      <Box px={4} py={2}>
-        <Text fontSize="sm" color="gray.500">
-          John is typing...
-        </Text>
       </Box>
 
       {/* Message Input */}
-      <HStack
-        p={4}
-        borderTop="1px"
-        borderColor="gray.200"
-        bg="white"
-        spacing={2}
-      >
-        <Input placeholder="Type a message..." />
-        <IconButton
-          colorScheme="teal"
-          aria-label="Send"
-          icon={<ArrowForwardIcon />}
-        />
-      </HStack>
+      <MessageInput sendLoading={sendLoading} sendMessage={sendMessage} />
     </Flex>
   );
 }
