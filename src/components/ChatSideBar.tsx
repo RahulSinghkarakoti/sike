@@ -66,18 +66,20 @@ function ChatSideBar() {
     <VStack spacing={4} align="stretch">
       <HStack>
         <Input placeholder="Search chats..." size="sm" />
-        <IconButton
+             <CreateRoomModal/>
+
+        {/* <IconButton
           icon={<LuRefreshCcw />}
           size="sm"
           aria-label="Refrsh"
           onClick={() => fetchChats()}
         >
           Refresh
-        </IconButton>
+        </IconButton> */}
       </HStack>
       {chatLoading ? (
         <>
-          {new Array(5).fill(0).map((_, index) => (
+          {new Array(7).fill(0).map((_, index) => (
             <HStack key={index} gap="5">
               <SkeletonCircle size="12" />
               <Stack flex="1">
@@ -120,7 +122,7 @@ function ChatSideBar() {
                   onClick={() => setCurrentChat(chat)}
                 >
                   <Avatar size="sm" />
-                  <Text fontWeight="medium">{chat.name}</Text>
+                  <Text fontWeight="medium">{chat?.name}</Text>
                 </HStack>
               ))}
           </VStack>

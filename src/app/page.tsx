@@ -1,6 +1,8 @@
 import Hero from "@/components/Hero";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import MyRoomPage from "@/components/MyRoomPage";
+import { ChatProvider } from "@/context/ChatContext";
 
 export default async function Home() {
     const cookieStore = await cookies();
@@ -16,7 +18,9 @@ export default async function Home() {
 
   return (
     <>
-   <Hero/>
+     <ChatProvider>
+        <MyRoomPage />
+      </ChatProvider>
     </>
   );
 }

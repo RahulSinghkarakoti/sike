@@ -20,7 +20,9 @@ export const chatReducer = (state: InitialStateType, action: ChatAction) => {
         case "SET_SEND_LOADING":
             return { ...state, sendLoading: action.payload }
         case "SET_MESSAGES":
-            return { ...state, messages: action.payload }
+            return { ...state, messages: action.payload }  
+        case "APPEND_MESSAGE":
+              return { ...state, messages: [...state.messages.slice(-200), action.payload], }
         case "UPDATE_SEEN":
             return {
                 ...state,

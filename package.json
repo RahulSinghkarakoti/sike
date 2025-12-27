@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "dev:socket": "set NODE_OPTIONS=--loader=ts-node/esm --trace-warnings --no-warnings && npx ts-node server.ts",
+    "dev:socket": "set NODE_OPTIONS=--loader=ts-node/esm   --inspect --trace-warnings --no-warnings && npx ts-node  server.ts",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

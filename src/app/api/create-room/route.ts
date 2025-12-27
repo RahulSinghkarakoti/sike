@@ -39,7 +39,7 @@ export async function POST(req: Request, res: Response) {
             }
         });
 
-        return NextResponse.json({status:200,response})
+        return NextResponse.json({status:200,newRoom:newRoom})
 
     } catch (error) {
         console.log(error)
