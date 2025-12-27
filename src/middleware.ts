@@ -7,7 +7,6 @@ export async function middleware(req: NextRequest) {
   // ✅ Read cookies from the request
   const anonId = req.cookies.get("anon_id");
   
-  console.log('Current anon_id:', anonId?.value);
   
   // Create response
   const res = NextResponse.next();
@@ -22,7 +21,6 @@ export async function middleware(req: NextRequest) {
       maxAge: 60 * 60 * 24 * 365, // 1 year
       path: "/",
     });
-    console.log('anon_id set:', newAnonId);
   }
   
   return res;

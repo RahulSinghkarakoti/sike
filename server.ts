@@ -10,31 +10,39 @@ const dev = process.env.NODE_ENV !== 'production'
 const app = next({ dev, hostname, port })
 const handle = app.getRequestHandler()
 
+
 app.prepare().then(() => {
 
   const httpServer = createServer(handle);
 
-  const io = new Server(httpServer);
+  const io = new Server(httpServer, { cors: { origin: '*' } });
 
+if (!io.listenerCount("connection")) {
   io.on("connection", (socket) => {
     console.log('user connected: ', socket.id)
 
     socket.on('join-room', ({ roomId, userId, username }) => {
-      socket.join(roomId)
-      socket.to(roomId).emit('user_joined', { roomId, userId, username })
-      console.log('user joinded room',{roomId,userId}) 
+      if (socket.rooms.has(roomId)) {
+        console.log('already in room', { roomId, userId });
+        return;
+      }
+
+      socket.join(roomId);
+      io.to(roomId).emit('user_joined', { roomId, userId, username });
+
+      console.log('user joined room', { roomId, userId });
+    });
+
+
+    socket.on('send-message', ({roomId, message}) => {
+      io.to(roomId).emit('messageSent', { roomId, message }) 
     })
 
-    socket.on('send-message',(roomId,message:Message)=>{
-     socket.to(roomId).emit('messageSent',{roomId,message})
-     console.log('Message sent',{roomId,message})
-    })
-
-    socket.on('disconnect',()=>{
+    socket.on('disconnect', () => {
       console.log('user disconnected')
     })
   });
-
+}
   httpServer
     .once("error", (err) => {
       console.error(err);

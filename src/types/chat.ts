@@ -39,6 +39,7 @@ export type ChatAction =
     | { type: "SET_CHAT_LOADING"; payload: boolean }
     | { type: "SET_CHATS"; payload: Chat[] }
     | { type: "SET_MESSAGES"; payload: Message[] }
+    | { type: "APPEND_MESSAGE"; payload: Message }
     | { type: "SET_MESSAGES_LOADING"; payload: boolean }
     | { type: "SET_SEND_LOADING"; payload: boolean }
     | { type: "UPDATE_SEEN"; payload: { id: string } };
@@ -58,5 +59,6 @@ export interface ChatContextType {
     getChats: () => void
     joinRoom: (roomSlug:string) => void
     sendMessage: (text:string) => void
+    createRoom:(name:string)=>void
 }
 

@@ -48,14 +48,14 @@ export async function POST(req: Request, res: Response) {
                 roomId: exist.id,
             }
         })
-        // const chat = await prisma.chatRoom.findFirst({
-        //     where: {
-        //         id: exist.id,
-        //     },
-        // })
+        const chat = await prisma.chatRoom.findFirst({
+            where: {
+                id: exist.id,
+            },
+        })
 
 
-        return NextResponse.json({ status: 201, message: 'Room Joined Successfully.' })
+        return NextResponse.json({ status: 201, message: 'Room Joined Successfully.',chat })
 
     } catch (error) {
         console.log(error)

@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma'; 
 
 export async function POST(req: Request, res: Response) {
     try {
@@ -30,10 +30,16 @@ export async function POST(req: Request, res: Response) {
                 text: text.trim()
             }
         })
-
+        
+        
         return NextResponse.json({status:200,message:'Message sent successfull.',newMessage:message})
 
-    } catch (error) {
+    }  catch (err: any) {
+    console.error("send-message error:", err)
 
-    }
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    )
+  }
 } 

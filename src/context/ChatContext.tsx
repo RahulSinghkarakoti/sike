@@ -9,9 +9,9 @@ import {
   Message,
 } from "@/types/chat";
 import axios from "axios";
-import { createContext, ReactNode, FC, useReducer } from "react";
+import { createContext, ReactNode, FC, useReducer, useEffect } from "react";
 import { socket } from "@/lib/socketClient";
-import Cookies from "js-cookie";  
+import Cookies from "js-cookie";
 
 interface ChatProviderProps {
   children: ReactNode;
@@ -22,7 +22,7 @@ export const ChatIntialState: InitialStateType = {
   loading: false,
   chatLoading: false,
   messageLoading: false,
-  sendLoading:false,
+  sendLoading: false,
   chats: [],
   messages: [],
 };
@@ -33,7 +33,7 @@ const ChatContext = createContext<ChatContextType>({
   loading: false,
   messageLoading: false,
   chatLoading: false,
-  sendLoading:false,
+  sendLoading: false,
   chats: [],
   setMessages: () => {},
   setChats: () => {},
@@ -42,6 +42,7 @@ const ChatContext = createContext<ChatContextType>({
   getChats: () => {},
   joinRoom: (roomSlug) => {},
   sendMessage: (text) => {},
+  createRoom: (name) => {},
 });
 
 const ChatProvider = ({ children }: ChatProviderProps) => {
@@ -103,6 +104,23 @@ const ChatProvider = ({ children }: ChatProviderProps) => {
     }
   };
 
+  const createRoom = async (name: string) => {
+    try {
+      console.log("-------createRoom-------");
+      const response = await axios.post("/api/create-room",{roomName:name});
+      const newRoom = response.data.newRoom;
+      setChats([...state.chats,newRoom]);
+        return { success: true, message: response.data.message };
+
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error("Error Occur While Creating Room: " + error.message);
+      } else {
+        throw new Error("Error Occur While Creating Room");
+      }
+    }
+  };
+
   async function joinRoom(roomSlug: string): Promise<ApiResult> {
     try {
       console.log("-------joinRoom-------");
@@ -126,8 +144,8 @@ const ChatProvider = ({ children }: ChatProviderProps) => {
   const joinWSRoom = async (roomId: string) => {
     console.log("joinSocketRoom");
     const user_id = Cookies.get("anon_id");
+    console.log(user_id);
     socket.emit("join-room", { roomId, userId: user_id, username: "rahul" });
-    console.log(socket);
   };
 
   const sendMessage = async (text: string) => {
@@ -137,9 +155,14 @@ const ChatProvider = ({ children }: ChatProviderProps) => {
       if (!roomId || !text.trim()) return;
 
       dispatch({ type: "SET_SEND_LOADING", payload: true });
-      const response = await axios.post("/api/send-message", { roomId,text });
-      console.log(response);
-      setMessages([...state.messages,response.data.newMessage])
+      const response = await axios.post("/api/send-message", { roomId, text });
+      dispatch({ type: "APPEND_MESSAGE", payload: response.data.newMessage });
+
+      console.log(state.messages);
+      socket.emit("send-message", {
+        roomId,
+        message: response.data.newMessage,
+      });
       dispatch({ type: "SET_SEND_LOADING", payload: false });
     } catch (error) {
       if (error instanceof Error) {
@@ -150,6 +173,30 @@ const ChatProvider = ({ children }: ChatProviderProps) => {
     }
   };
 
+  useEffect(() => {
+    const handler = ({
+      roomId,
+      message,
+    }: {
+      roomId: string;
+      message: Message;
+    }) => {
+      const user_id = Cookies.get("anon_id");
+      if (user_id != message.senderId) {
+        dispatch({ type: "APPEND_MESSAGE", payload: message });
+      }
+    };
+
+    socket.on("messageSent", handler);
+    console.log("Listeners:", socket.listeners("messageSent").length);
+ console.log("Socket id:", socket.id);
+
+
+    return () => {
+      socket.off("messageSent", handler); // ✅ remove only this listener
+    };
+  }, [socket]);
+
   return (
     <ChatContext.Provider
       value={{
@@ -157,7 +204,7 @@ const ChatProvider = ({ children }: ChatProviderProps) => {
         loading: state.loading,
         chatLoading: state.chatLoading,
         messageLoading: state.messageLoading,
-        sendLoading:state.sendLoading,
+        sendLoading: state.sendLoading,
         chats: state.chats,
         currentChat: state.currentChat,
         joinRoom,
@@ -167,6 +214,7 @@ const ChatProvider = ({ children }: ChatProviderProps) => {
         closeChat,
         getChats,
         sendMessage,
+        createRoom,
       }}
     >
       {children}

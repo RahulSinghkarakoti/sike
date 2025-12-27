@@ -22,7 +22,7 @@ export default function RootLayout({
           <Flex direction="column" minH="100vh">
             {/* Fixed height Navbar */}
             <Box as="header">
-              <Navbar />
+              {/* <Navbar /> */}
             </Box>
 
             {/* Children should grow and fill remaining space */}

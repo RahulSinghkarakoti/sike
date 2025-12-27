@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import {
   Button,
   FormControl,
   FormLabel,
+  IconButton,
   Input,
   Modal,
   ModalBody,
@@ -12,39 +13,47 @@ import {
   ModalHeader,
   ModalOverlay,
   useDisclosure,
-  useToast 
+  useToast,
 } from "@chakra-ui/react";
 
-import { toaster } from "@/components/ui/toaster"
+import { toaster } from "@/components/ui/toaster";
 import axios from "axios";
+import { LuRefreshCcw, LuUserPlus } from "react-icons/lu";
+import { ChatContext } from "@/context/ChatContext";
 
 function CreateRoomModal() {
+  const { createRoom } = useContext(ChatContext);
   const { isOpen, onOpen, onClose } = useDisclosure();
-   const toast = useToast();
-   const [name,setName]=useState<string>('')
+  const toast = useToast();
+  const [name, setName] = useState<string>("");
 
-   async function createRoom(){
+  const handleCreateRoom = async () => {
     try {
-        const res=await axios.post('/api/create-room',{roomName:name})
-        
+      const res = await createRoom(name);
       toast({
-          title: "Action successful.",
-          description: "Your data has been saved.",
-          status: "success", // success | error | warning | info
-          duration: 2500,
-          isClosable: true,
-          position: "bottom-right", // optional: top | top-right | bottom | etc.
-        })
+        title: res?.success ? "Success" : "Error",
+        description: res?.message || "",
+        status: res?.success ? "success" : "error",
+        duration: 5000,
+        isClosable: true,
+      });
+      onClose();
     } catch (error) {
-        console.error(error)   
+      console.error(error);
     }
-  }
+  };
 
   return (
     <>
-      <Button onClick={onOpen} colorScheme="teal" size="lg">
-        Create Room
-      </Button>
+      <IconButton
+        icon={<LuUserPlus />}
+        size="sm"
+        aria-label="Add Room"
+        onClick={() => onOpen()}
+      >
+        Add Room
+      </IconButton>
+
       <Modal isOpen={isOpen} onClose={onClose} isCentered>
         <ModalOverlay />
         <ModalContent>
@@ -53,11 +62,20 @@ function CreateRoomModal() {
           <ModalBody pb={6}>
             <FormControl>
               <FormLabel>Room Name</FormLabel>
-              <Input onChange={(e) => setName(e.target.value)}  placeholder="Enter Room Name" type="text" />
+              <Input
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter Room Name"
+                type="text"
+              />
             </FormControl>
           </ModalBody>
           <ModalFooter>
-            <Button disabled={!name.length}   onClick={createRoom} colorScheme="teal" mr={3}>
+            <Button
+              disabled={!name.length}
+              onClick={handleCreateRoom}
+              colorScheme="teal"
+              mr={3}
+            >
               Create
             </Button>
             <Button onClick={onClose} variant="ghost">
