@@ -23,6 +23,8 @@ export const chatReducer = (state: InitialStateType, action: ChatAction) => {
             return { ...state, messages: action.payload }  
         case "APPEND_MESSAGE":
               return { ...state, messages: [...state.messages.slice(-200), action.payload], }
+        case "SET_BADGE":
+              return { ...state, badge: action.payload }
         case "UPDATE_SEEN":
             return {
                 ...state,

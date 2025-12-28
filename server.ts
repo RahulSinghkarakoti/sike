@@ -16,12 +16,13 @@ app.prepare().then(() => {
   const httpServer = createServer(handle);
 
   const io = new Server(httpServer, { cors: { origin: '*' } });
+ 
 
-if (!io.listenerCount("connection")) {
-  io.on("connection", (socket) => {
-    console.log('user connected: ', socket.id)
+  io.on('connection', socket => {
+    console.log('user connected: ', socket.id);
 
-    socket.on('join-room', ({ roomId, userId, username }) => {
+    /* 1.  declare the handlers ONCE per socket  */
+    const onJoin = ({ roomId, userId, username }: { roomId: string; userId: string; username: string }) => {
       if (socket.rooms.has(roomId)) {
         console.log('already in room', { roomId, userId });
         return;
@@ -31,18 +32,25 @@ if (!io.listenerCount("connection")) {
       io.to(roomId).emit('user_joined', { roomId, userId, username });
 
       console.log('user joined room', { roomId, userId });
-    });
+    };
+    const onMessage = ({ roomId, message }:{roomId:string,message:Message}) => {
+      io.to(roomId).emit('messageSent', { roomId, message })
+    };
+    const onDisconnect = () => {
+      console.log('user disconnected', socket.id);
 
+      /* 2.  remove the listeners we added */
+      socket.off('join-room', onJoin);
+      socket.off('send-message', onMessage);
+      socket.off('disconnect', onDisconnect); // not strictly required, but clean
+    };
 
-    socket.on('send-message', ({roomId, message}) => {
-      io.to(roomId).emit('messageSent', { roomId, message }) 
-    })
-
-    socket.on('disconnect', () => {
-      console.log('user disconnected')
-    })
+    /* 3.  attach them */
+    socket.on('join-room', onJoin);
+    socket.on('send-message', onMessage);
+    socket.on('disconnect', onDisconnect);
   });
-}
+
   httpServer
     .once("error", (err) => {
       console.error(err);

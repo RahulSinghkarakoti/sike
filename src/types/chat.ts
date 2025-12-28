@@ -27,6 +27,7 @@ export interface InitialStateType {
     currentChat: Chat | null;
     loading: boolean;
     chatLoading: boolean;
+    badge:String,
     chats: Chat[];          // Adjust type if needed (e.g., Chat[])
     messageLoading: boolean;
     sendLoading:boolean;
@@ -42,9 +43,11 @@ export type ChatAction =
     | { type: "APPEND_MESSAGE"; payload: Message }
     | { type: "SET_MESSAGES_LOADING"; payload: boolean }
     | { type: "SET_SEND_LOADING"; payload: boolean }
-    | { type: "UPDATE_SEEN"; payload: { id: string } };
+    | { type: "UPDATE_SEEN"; payload: { id: string } }
+    | { type: "SET_BADGE"; payload: string  };
 
 export interface ChatContextType {
+    badge:String,
     messages: Message[];
     currentChat: Chat | null;
     loading: boolean;

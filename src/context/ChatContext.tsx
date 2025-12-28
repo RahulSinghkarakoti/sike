@@ -23,6 +23,7 @@ export const ChatIntialState: InitialStateType = {
   chatLoading: false,
   messageLoading: false,
   sendLoading: false,
+  badge: "",
   chats: [],
   messages: [],
 };
@@ -34,6 +35,7 @@ const ChatContext = createContext<ChatContextType>({
   messageLoading: false,
   chatLoading: false,
   sendLoading: false,
+  badge: "",
   chats: [],
   setMessages: () => {},
   setChats: () => {},
@@ -47,6 +49,10 @@ const ChatContext = createContext<ChatContextType>({
 
 const ChatProvider = ({ children }: ChatProviderProps) => {
   const [state, dispatch] = useReducer(chatReducer, ChatIntialState);
+
+  const setSenderBadge = (newBadge: string) => {
+    dispatch({ type: "SET_BADGE", payload: newBadge });
+  };
 
   const setMessages = (newMessages: Message[]) => {
     dispatch({ type: "SET_MESSAGES", payload: newMessages });
@@ -107,11 +113,10 @@ const ChatProvider = ({ children }: ChatProviderProps) => {
   const createRoom = async (name: string) => {
     try {
       console.log("-------createRoom-------");
-      const response = await axios.post("/api/create-room",{roomName:name});
+      const response = await axios.post("/api/create-room", { roomName: name });
       const newRoom = response.data.newRoom;
-      setChats([...state.chats,newRoom]);
-        return { success: true, message: response.data.message };
-
+      setChats([...state.chats, newRoom]);
+      return { success: true, message: response.data.message };
     } catch (error) {
       if (error instanceof Error) {
         throw new Error("Error Occur While Creating Room: " + error.message);
@@ -143,35 +148,73 @@ const ChatProvider = ({ children }: ChatProviderProps) => {
 
   const joinWSRoom = async (roomId: string) => {
     console.log("joinSocketRoom");
-    const user_id = Cookies.get("anon_id");
-    console.log(user_id);
-    socket.emit("join-room", { roomId, userId: user_id, username: "rahul" });
+    const secret_fp = Cookies.get("fp");
+    socket.emit("join-room", { roomId, userId: secret_fp, username: "rahul" });
   };
 
-  const sendMessage = async (text: string) => {
-    console.log("-------sendMessage-------");
+ const sendMessage = async (text: string, isRetry = false,  badge?: string | null) => {
+  console.log('-------sendMessage-------');
+  try {
+    const roomId = state?.currentChat?.id;
+    if (!roomId || !text.trim()) return;
+
+    dispatch({ type: 'SET_SEND_LOADING', payload: true });
+
+    const response = await axios.post(
+      '/api/send-message',
+      { roomId, text },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-badge': String(badge || state.badge  ),
+        },
+        validateStatus: () => true, // ← 1. don’t throw on 403
+      }
+    );
+
+    if (response.status === 200) {
+      dispatch({ type: 'APPEND_MESSAGE', payload: response.data.newMessage });
+      dispatch({ type: 'SET_BADGE', payload: response.data.badge });  
+
+      socket.emit('send-message', { roomId, message: response.data.newMessage });
+      return;
+    }
+
+    if (!isRetry && response.status === 403 && response.data.code === 'stale_badge') {
+       const {data} = await axios.get("/api/get-badge");  // ← 2. get new badge
+      dispatch({ type: 'SET_BADGE', payload: data.badge }); // ← save it
+      return sendMessage(text, true,data.badge); // ← 3. retry once
+    }
+
+    throw new Error(response.data.message || 'Send failed');
+  } catch (error: any) {
+    throw new Error('Error while sending message: ' + error.message);
+  } finally {
+    dispatch({ type: 'SET_SEND_LOADING', payload: false });
+  }
+};
+
+  const initializeUniqueBadge = async () => {
     try {
-      const roomId = state?.currentChat?.id;
-      if (!roomId || !text.trim()) return;
-
-      dispatch({ type: "SET_SEND_LOADING", payload: true });
-      const response = await axios.post("/api/send-message", { roomId, text });
-      dispatch({ type: "APPEND_MESSAGE", payload: response.data.newMessage });
-
-      console.log(state.messages);
-      socket.emit("send-message", {
-        roomId,
-        message: response.data.newMessage,
-      });
-      dispatch({ type: "SET_SEND_LOADING", payload: false });
+      const res = await axios.get("/api/get-badge");
+      if (res.data.status == 200) {
+        setSenderBadge(res.data.badge);
+      }
+      return res;
     } catch (error) {
       if (error instanceof Error) {
-        throw new Error("Error Occur While sending Message: " + error.message);
+        throw new Error(
+          "Error Occur While Settting Secret Fingerprint: " + error.message
+        );
       } else {
-        throw new Error("Error Occur While  sending Message");
+        throw new Error("Error Occur While  Settting Secret Fingerprint");
       }
     }
   };
+
+  useEffect(() => {
+    initializeUniqueBadge();
+  }, []);
 
   useEffect(() => {
     const handler = ({
@@ -181,16 +224,15 @@ const ChatProvider = ({ children }: ChatProviderProps) => {
       roomId: string;
       message: Message;
     }) => {
-      const user_id = Cookies.get("anon_id");
-      if (user_id != message.senderId) {
+      const secret_fp = Cookies.get("fp");
+      if (secret_fp != message.senderId) {
         dispatch({ type: "APPEND_MESSAGE", payload: message });
       }
     };
 
     socket.on("messageSent", handler);
     console.log("Listeners:", socket.listeners("messageSent").length);
- console.log("Socket id:", socket.id);
-
+    console.log("Socket id:", socket.id);
 
     return () => {
       socket.off("messageSent", handler); // ✅ remove only this listener
@@ -200,6 +242,7 @@ const ChatProvider = ({ children }: ChatProviderProps) => {
   return (
     <ChatContext.Provider
       value={{
+        badge: state.badge || "",
         messages: state.messages || [],
         loading: state.loading,
         chatLoading: state.chatLoading,

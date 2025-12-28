@@ -2,10 +2,12 @@ import { cookies } from 'next/headers';
 import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from '@/lib/prisma'; 
+import { generateBadge } from '../get-badge/route';
 
 export async function POST(req: Request, res: Response) {
     try {
         const user_id = (req as any).cookies?.get('anon_id')?.value
+        const sender_fp = (req as any).cookies?.get('fp')?.value
 
         if (!user_id) return NextResponse.json({ status: 400, message: 'User Id Not Found',user_id })
 
@@ -26,13 +28,14 @@ export async function POST(req: Request, res: Response) {
         const message = await prisma.message.create({
             data: {
                 roomId: roomId,
-                senderId: user_id,
+                senderId: sender_fp,
                 text: text.trim()
             }
         })
         
+        const badge=await generateBadge(user_id)
         
-        return NextResponse.json({status:200,message:'Message sent successfull.',newMessage:message})
+        return NextResponse.json({status:200,message:'Message sent successfull.',newMessage:message,badge})
 
     }  catch (err: any) {
     console.error("send-message error:", err)

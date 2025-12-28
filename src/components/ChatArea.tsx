@@ -14,16 +14,11 @@ import {
   Button,
   Center,
   Icon,
-} from "@chakra-ui/react";
-import { AddIcon, AttachmentIcon, ArrowForwardIcon } from "@chakra-ui/icons";
-import { useContext, useState } from "react";
-import axios from "axios";
+} from "@chakra-ui/react"; 
+import { useContext, useState } from "react"; 
 import { ChatContext } from "@/context/ChatContext";
 import { IoChatboxEllipsesOutline } from "react-icons/io5";
-import MessageInput from "./MessageInput";
-import Cookies from "js-cookie";
-import MessageSkeleton from "./MessageSkeleton";
-import { useEffect, useRef } from "react";
+import MessageInput from "./MessageInput"; 
 import ChatHeader from "./ChatHeader";
 import ChatMessages from "./ChatMessages";
 

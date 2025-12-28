@@ -9,6 +9,7 @@ export function Provider(props: ColorModeProviderProps) {
 
   useEffect(() => {
     setIsClient(true);
+    console.log("provider console log-- use effect")
   }, []);
 
   if (!isClient) {

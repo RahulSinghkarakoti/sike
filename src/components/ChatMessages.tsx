@@ -9,7 +9,7 @@ function ChatMessages() {
   const { currentChat, messages, messageLoading, sendLoading, sendMessage } =
     useContext(ChatContext);
 
-  const user_id = Cookies.get("anon_id");
+  const secret_fp = Cookies.get("fp");
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -32,7 +32,7 @@ function ChatMessages() {
   return (
     <>
       {messages?.map((message, index) => {
-        const isMe = user_id === message.senderId;
+        const isMe = secret_fp === message.senderId;
 
         return (
           <Flex
