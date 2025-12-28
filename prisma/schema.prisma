@@ -11,8 +11,7 @@ model User {
   id        String   @id @default(uuid())
   rooms    UserRoom[]
   chatRooms ChatRoom[]
-  messages Message[]
-   createdAt DateTime @default(now())
+  createdAt DateTime @default(now())
   lastSeen  DateTime @updatedAt
   nickname  String? 
 }
@@ -48,7 +47,7 @@ model ChatRoom {
 model Message {
   id         Int      @id @default(autoincrement())
   roomId     Int
-  senderId   String
+  senderId   String 
   receiverId Int?     // optional (for private DM inside a room)
   text       String?
   fileUrl    String?
@@ -57,7 +56,6 @@ model Message {
   updated_at DateTime @updatedAt
 
   room   ChatRoom @relation(fields: [roomId], references: [id])
-  sender User     @relation(fields: [senderId], references: [id])
 }
 
 enum Message_Status {
